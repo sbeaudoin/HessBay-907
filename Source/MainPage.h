@@ -11,6 +11,7 @@
 #include "BigNumbersBold.h"
 #include <TFT_HX8357.h>
 #include <Arduino.h>
+#include "EncoderDriver.h"
 
 /*
 	Main page of the unit.  Display the available temperature profiles and the current solder iron temperature.
@@ -26,7 +27,7 @@ class MainPage : public PageBase
 			--
 			*lcdDriver : Instance of the LCD driver.
 		*/
-		MainPage(TFT_HX8357 *lcdDriver) : PageBase(lcdDriver) 
+		MainPage(TFT_HX8357 *lcdDriver, EncoderDriver *encoderDriver) : PageBase(lcdDriver, encoderDriver) 
 		{};
 
 		/*
@@ -44,33 +45,12 @@ class MainPage : public PageBase
 		*/
 		PageName Loop();
 
+		void HandleEncoderChange();
+
 	private :
 
-		/*
-			Temperature profile selection.
-		*/
-		enum ProfileName 
-		{ 
-			/*
-				No profile selected.
-			*/
-			None, 
-
-			/*
-				Profile A is selected.
-			*/
-			ProfileA, 
-
-			/*
-				Profile B is selected.
-			*/
-			ProfileB, 
-
-			/*
-				Profile C is selected.
-			*/
-			ProfileC 
-		};
+		int CurrentIronTemp;
+		int TargetIronTemp;
 
 		/*
 			The currently selected profile.
@@ -139,7 +119,22 @@ class MainPage : public PageBase
 
 			IN
 			--
-			The current iron temperature.
+			temp : The current iron temperature.
 		*/
 		void UpdateMainTemperature(int temp);
+
+		/*
+			Show the target temperature for the soldering iron.
+
+			IN
+			--
+			temp : The target temperature for the soldering iron.
+		*/
+		void UpdateTargetTemp(int temp);
+
+		int GetCurrentIronTemp();
+
+		void SetcurrentIronLoad(int loadPercent);
+
+		void ManageLoadChange();
 };

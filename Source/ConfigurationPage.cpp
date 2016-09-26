@@ -5,11 +5,7 @@
 */
 void ConfigurationPage::Setup()
 {
-	Serial.println("> ConfigurationPage::Prepare()");
-
 	LCD->fillScreen(TFT_BLUE);
-
-	Serial.println("< ConfigurationPage::Prepare()");
 }
 
 /*
@@ -17,12 +13,13 @@ void ConfigurationPage::Setup()
 */
 PageName ConfigurationPage::Loop()
 {
-	Serial.println("> ConfigurationPage::Execute()");
-
 	delay(5000);
 
-	Serial.println("< ConfigurationPage::Execute()");
-
 	return PageName::Main;
+}
+
+void ConfigurationPage::HandleEncoderChange()
+{
+
 }
 

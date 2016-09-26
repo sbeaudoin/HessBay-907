@@ -3,6 +3,7 @@
 	----
 	- If the profile temperature is 0, show nothing.
 	- In UpdateProfileTemp, consider the case where the selected profile is None.
+	- Clear the old numbers with the same text with the background color as the foreground color.
 */
 
 #include "MainPage.h"
@@ -16,7 +17,7 @@ void MainPage::PrepareHeader()
 	LCD->setFreeFont(&NormalFontBold);
 	LCD->fillRect(0, 0, 479, 26, TFT_DARKGREEN);
 	LCD->setTextColor(TFT_WHITE, TFT_DARKGREEN);
-	LCD->drawCentreString("HessBay 907 Intelligent Station", 240, 4, 1);
+	LCD->drawCentreString((char*)"HessBay 907 Intelligent Station", 240, 4, 1);
 
 	// Show the firmware version.
 	char versionArray[12];
@@ -33,7 +34,7 @@ void MainPage::PrepareLoadLevel()
 {
 	LCD->setFreeFont(&SmallFont);
 	LCD->setTextColor(TFT_DARKGREY, TFT_BLACK);
-	LCD->drawString("Load", 446, 55, 1);
+	LCD->drawString((char*)"Load", 446, 55, 1);
 	LCD->drawRect(446, 69, 33, 102, TFT_DARKGREEN);
 }
 
@@ -47,12 +48,12 @@ void MainPage::PrepareLoadLevel()
 void MainPage::PrepareProfile(ProfileName profile)
 {
 	// Only if a valid profile is specified.
-	if (profile!=ProfileName::None)
+	if (profile!=ProfileName::NoProfile)
 	{
 		// Display the profile section header.
 		LCD->setTextColor(TFT_DARKGREY, TFT_BLACK);
 		LCD->setFreeFont(&NormalFont);
-		LCD->drawString("Temperature Profiles", 0, 178, 1);
+		LCD->drawString((char*)"Temperature Profiles", 0, 178, 1);
 
 		// Calculate the origin of the upper left corner.
 		int originX = ((int)profile - 1) * 165;
@@ -84,6 +85,9 @@ void MainPage::PrepareProfile(ProfileName profile)
 			case ProfileName::ProfileC:
 				profileName = "Profile C";
 				break;
+
+			case ProfileName::NoProfile:
+				break;
 		}
 
 		// Display the profile name.
@@ -106,12 +110,12 @@ void MainPage::PrepareFooter()
 
 	// Draw the left side.
 	LCD->fillRect(0, 293, 200, 26, TFT_DARKGREEN);
-	LCD->drawString("Manual Temp.", 30, 297, 1);
+	LCD->drawString((char*)"Manual Temp.", 30, 297, 1);
 	LCD->drawBitmap(4, 298, Rotate, 16, 16, TFT_BLACK);
 
 	// Draw the right side.
 	LCD->fillRect(279, 293, 200, 26, TFT_DARKGREEN);
-	LCD->drawString("Configuration", 309, 297, 1);
+	LCD->drawString((char*)"Configuration", 309, 297, 1);
 	LCD->drawBitmap(283, 298, RotateSelect, 16, 16, TFT_BLACK);
 }
 
@@ -138,6 +142,14 @@ void MainPage::Setup()
 	PrepareProfile(ProfileName::ProfileA);
 	PrepareProfile(ProfileName::ProfileB);
 	PrepareProfile(ProfileName::ProfileC);
+
+	// Display the configured profile temps.
+	UpdateProfileTemperature(ProfileName::ProfileA, ProfileTemp[0]);
+	UpdateProfileTemperature(ProfileName::ProfileB, ProfileTemp[1]);
+	UpdateProfileTemperature(ProfileName::ProfileC, ProfileTemp[2]);
+
+	// Get the initial values.
+	CurrentIronTemp = GetCurrentIronTemp();
 }
 
 /*
@@ -145,42 +157,45 @@ void MainPage::Setup()
 */
 PageName MainPage::Loop()
 {
-	// Display the current profiles temp.
-	UpdateProfileTemperature(ProfileName::ProfileA, ProfileTemp[0]);
-	UpdateProfileTemperature(ProfileName::ProfileB, ProfileTemp[1]);
-	UpdateProfileTemperature(ProfileName::ProfileC, ProfileTemp[2]);
+
+	// ManageLoadChange(); // Change the load so the current iron temp move to the target temperature.
+
+	while(true)
+	{
+		delay(100);
+	}
 
 #ifdef TEST_MODE
 
 	// Make sure the profiles are drawn correctly when the selected profile go to None.
-	SelectProfile(ProfileName::None);
-	delay(1000);
-	SelectProfile(ProfileName::ProfileA);
-	delay(1000);
-	SelectProfile(ProfileName::None);
-	delay(1000);
-	SelectProfile(ProfileName::ProfileB);
-	delay(1000);
-	SelectProfile(ProfileName::None);
-	delay(1000);
-	SelectProfile(ProfileName::ProfileC);
-	delay(1000);
-	SelectProfile(ProfileName::None);
+	//SelectProfile(ProfileName::None);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileA);
+	//delay(1000);
+	//SelectProfile(ProfileName::None);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileB);
+	//delay(1000);
+	//SelectProfile(ProfileName::None);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileC);
+	//delay(1000);
+	//SelectProfile(ProfileName::None);
 
 	// Make sure the profiles are drawn correctly when the selected profile goes from one value to the other.
-	delay(1000);
-	SelectProfile(ProfileName::ProfileA);
-	delay(1000);
-	SelectProfile(ProfileName::ProfileB);
-	delay(1000);
-	SelectProfile(ProfileName::ProfileC);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileA);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileB);
+	//delay(1000);
+	//SelectProfile(ProfileName::ProfileC);
 
 	// Test the value update of the different parts of the page.
 	int load = 0;
-	for (int i = 0; i < 100; i += 10)
+	for (int i = 0; i < 500; i++)
 	{
 		// The load go up one block at each iteration and is reset when at 10/10.
-		UpdateLoadLevelValue(load++);
+		// UpdateLoadLevelValue(load++);
 		if (load > 10)
 		{
 			load = 0;
@@ -194,7 +209,9 @@ PageName MainPage::Loop()
 		UpdateProfileTemperature(ProfileName::ProfileB, i + 15);
 		UpdateProfileTemperature(ProfileName::ProfileC, i + 20);
 
-		delay(500);
+		UpdateTargetTemp(i);
+
+		delay(250);
 	}
 
 #endif
@@ -241,7 +258,7 @@ void MainPage::UpdateProfileTemperature(ProfileName profile, int temp)
 	}
 	else // No temperature set for this profile.
 	{
-		LCD->drawCentreString("0", originX + (150 / 2), 237, 1);
+		LCD->drawCentreString((char*)"0", originX + (150 / 2), 237, 1);
 	}
 
 	// Keep the temperature for the profile.
@@ -257,23 +274,20 @@ void MainPage::UpdateProfileTemperature(ProfileName profile, int temp)
 */
 void MainPage::SelectProfile(ProfileName profile)
 {
-	int originX;
-
 	// If a profile is already selected, and it is not the one received in parameter, clear it.
-	if (SelectedProfile != ProfileName::None && SelectedProfile!=profile)
+	if (SelectedProfile != ProfileName::NoProfile && SelectedProfile!=profile)
 	{
 		// Keep the old selected profile and reset the new one.
 		ProfileName clearedProfile = SelectedProfile;
-		SelectedProfile = ProfileName::None;
+		SelectedProfile = ProfileName::NoProfile;
 
 		// Clear the selection for the old selected profile.
-		originX = (clearedProfile - 1) * 165;
 		PrepareProfile(clearedProfile);
 		UpdateProfileTemperature(clearedProfile, ProfileTemp[clearedProfile - 1]);
 	}
 
 	// There is a newly selected profile.
-	if (profile != ProfileName::None)
+	if (profile != ProfileName::NoProfile)
 	{
 		// Select this profile.
 		SelectedProfile = profile;
@@ -321,23 +335,95 @@ void MainPage::UpdateLoadLevelValue(int load)
 
 	IN
 	--
-	The current iron temperature.
+	temp : The current iron temperature.
 */
 void MainPage::UpdateMainTemperature(int temp)
 {
 	// Draw the label.
 	LCD->setFreeFont(&NormalFont);
 	LCD->setTextColor(TFT_DARKGREY, TFT_BLACK);
-	LCD->drawString("Current Temperature", 0, 37, 1);
+	LCD->drawString((char*)"Current Temperature (C)", 0, 37, 1);
 
 	// Generate the temperature string with the degree symbol and unit.
-	String tempString = String(temp) + "-."; // For the degree symbol and "C".
+	String tempString = String(temp) + "-"; // For the degree symbol and "C".
 	char tempArray[6];
 	tempString.toCharArray(tempArray, 6, 0);
 
 	// Clear the old value and display the new one.
 	LCD->setFreeFont(&BigNumbersBold);
-	LCD->fillRect(0, 59, 350, 102, TFT_BLACK);
-	LCD->setTextColor(TFT_RED, TFT_BLACK);
+	LCD->fillRect(0, 58, 264, 103, TFT_GREEN);
+	LCD->setTextColor(TFT_RED, TFT_GREEN);
 	LCD->drawString(tempArray, 0, 66, 1);
+}
+
+/*
+	Show the target temperature for the soldering iron.
+
+	IN
+	--
+	temp : The target temperature for the soldering iron.
+*/
+void MainPage::UpdateTargetTemp(int temp)
+{ 
+	LCD->fillRect(268, 125, 122, 36, TFT_BLUE);
+	LCD->setFreeFont(&NormalNumbersBold);
+	LCD->setTextColor(TFT_RED);
+
+	String tempString = "0" + String(temp) + "0";
+	char tempArray[7];
+	tempString.toCharArray(tempArray, 7, 0);
+
+	LCD->drawString(tempArray, 268, 127, 1);
+}
+
+int MainPage::GetCurrentIronTemp()
+{
+	// Read the value of the iron temperature sensor input pin and do conversion to have a temperature in Celsius.
+
+	return 0;
+}
+
+void MainPage::SetcurrentIronLoad(int loadPercent)
+{
+	// Set the output voltage depending on the load.
+}
+
+void MainPage::ManageLoadChange()
+{
+	int newIronTemp = GetCurrentIronTemp();
+	int delta = newIronTemp-TargetIronTemp; // Negative indicate we should cool down.  If positive, we need to get hot.
+
+	int loadPercent = 0;
+
+	if(delta>0)
+	{
+		// Change the load depending on the difference between the current and target temp.  We use 10% per 5 degrees increment.
+		loadPercent = (delta/5)*10;
+	}
+	else if(delta!=0) // The current temperature is hotter than the target temperature.
+	{
+		// Cut the load.
+		loadPercent = 0;
+	}
+
+	// Keep the load between 0 and 100%.
+	if(loadPercent>100)
+	{
+		loadPercent = 100;
+	}
+
+	SetcurrentIronLoad(loadPercent);
+	UpdateLoadLevelValue(loadPercent/10);
+	UpdateMainTemperature(newIronTemp);
+}
+
+void MainPage::HandleEncoderChange()
+{
+	int delta = Encoder->ReadDelta(false);
+
+	if(delta!=0)
+	{ 
+		CurrentIronTemp += delta;
+		UpdateMainTemperature(CurrentIronTemp);
+	}	
 }

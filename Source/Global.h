@@ -10,7 +10,13 @@ const String VERSION = "1.0.0";
 /*
 	Un comment the line to activate the test mode.
 */
-#define TEST_MODE
+//#define TEST_MODE
+
+/*
+	Pin constants.
+*/
+const int PIN_ENCODER_A = 2;
+const int PIN_ENCODER_B = 3;
 
 /*
 	Declare the name of each page used in the navigator as an enumeration value.  On the initialisation of the Navigator class, 
@@ -18,6 +24,8 @@ const String VERSION = "1.0.0";
 */
 enum PageName
 {
+	NoPage,
+
 	/*
 		Main page who shows the different profiles and the current soldering iron temperature.
 	*/
@@ -28,4 +36,31 @@ enum PageName
 	*/
 	Configuration
 };
+
+/*
+Temperature profile selection.
+*/
+enum ProfileName
+{
+	/*
+	No profile selected.
+	*/
+	NoProfile,
+
+	/*
+	Profile A is selected.
+	*/
+	ProfileA,
+
+	/*
+	Profile B is selected.
+	*/
+	ProfileB,
+
+	/*
+	Profile C is selected.
+	*/
+	ProfileC
+};
+
 

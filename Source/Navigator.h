@@ -38,6 +38,8 @@ template <int S> class Navigator
 			{
 				Pages[i] = pages[i];
 			}
+
+			_currentPage = NULL;
 		}
 
 		/*
@@ -55,9 +57,15 @@ template <int S> class Navigator
 				// Get the specified page, initialize it and execute is own loop.  When the display should change for another page,
 				// the displayed page will exit is loop and return the name of the new page who should be displayed.
 				PageBase* nextPage = GetPage(pageName);
+				_currentPage = nextPage;
 				nextPage->Setup();
 				pageName = nextPage->Loop();
 			}
+		}
+
+		PageBase* GetCurrentPage()
+		{
+			return _currentPage;
 		}
 
 	private :
@@ -87,10 +95,16 @@ template <int S> class Navigator
 				if (name == Pages[i].Name)
 				{
 					page = Pages[i].Page;
+					_currentPage = page;
 					break;
 				}
 			}
 
 			return page;
 		}
+
+		/*
+			Contains the current page if one is current.  If not, returns null.
+		*/
+		PageBase* _currentPage;
 };

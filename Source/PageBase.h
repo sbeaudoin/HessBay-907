@@ -3,6 +3,7 @@
 #include "Global.h"
 #include <TFT_HX8357.h>
 #include <Arduino.h>
+#include "EncoderDriver.h"
 
 /*
 	Base virtual class for all pages.
@@ -19,9 +20,10 @@ public :
 		--
 		*lcdDriver : Pointer to the LCD driver instance.
 	*/
-	PageBase(TFT_HX8357 *lcdDriver) 
+	PageBase(TFT_HX8357 *lcdDriver, EncoderDriver *encoderDriver) 
 	{
 		LCD = lcdDriver;
+		Encoder = encoderDriver;
 	}
 
 	/*
@@ -39,10 +41,14 @@ public :
 	*/
 	virtual PageName Loop() = 0;
 
+	virtual void HandleEncoderChange() = 0;
+
 protected :
 
 	/*
 		The LCD driver instance.
 	*/
 	TFT_HX8357 *LCD;
+
+	EncoderDriver *Encoder;
 };

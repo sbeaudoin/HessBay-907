@@ -9,9 +9,11 @@
 
 	The following chars as been modified.
 
-	- 0x2D : Supposed to be '-', but will display the degree symbol.
-	- 0x2E : Supposed to be '.', but will display "C".
-	- 0x2F : Supposed to be '/', but will display "F".
+	- 0x2C : Supposed to be ',', but will display the degree symbol.
+	- 0x2D : Supposed to be '-', but will display "C".
+	- 0x2E : Supposed to be '.', but will display "F".
+
+	The character '/' (0x2F) as been added.
 */
 const uint8_t NormalNumbersBoldBitmaps [] PROGMEM = {
 	0x00, 0xFC, 0x00, 0x0F, 0xFC, 0x00, 0x7F, 0xFC, 0x03, 0xFF, 0xF0, 0x1F,
