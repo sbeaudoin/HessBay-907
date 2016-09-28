@@ -4,6 +4,7 @@
 #include <TFT_HX8357.h>
 #include <Arduino.h>
 #include "EncoderDriver.h"
+#include "TempControlService.h"
 
 /*
 	Base virtual class for all pages.
@@ -20,10 +21,11 @@ public :
 		--
 		*lcdDriver : Pointer to the LCD driver instance.
 	*/
-	PageBase(TFT_HX8357 *lcdDriver, EncoderDriver *encoderDriver) 
+	PageBase(TFT_HX8357 *lcdDriver, EncoderDriver *encoderDriver, TempControlService *tempSvc) 
 	{
 		LCD = lcdDriver;
 		Encoder = encoderDriver;
+		TempSvc = tempSvc;
 	}
 
 	/*
@@ -51,4 +53,6 @@ protected :
 	TFT_HX8357 *LCD;
 
 	EncoderDriver *Encoder;
+
+	TempControlService *TempSvc;
 };

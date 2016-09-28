@@ -1,9 +1,16 @@
+#include <TimerOne.h>
 #include "TFT_HX8357.h"
 #include "PageBase.h"
 #include "MainPage.h"
 #include "ConfigurationPage.h"
 #include "PageEntry.h"
 #include "Navigator.h"
+#include "TempControlService.h"
+
+/*
+	Initialize the services.
+*/
+TempControlService _tempSvc = TempControlService();
 
 /*
 	Initialize the drivers.
@@ -14,8 +21,8 @@ EncoderDriver _encoderDriver = EncoderDriver(PIN_ENCODER_A, PIN_ENCODER_B, true)
 /*
 	Initialize the pages used in the sketch.
 */
-MainPage _mainPage = MainPage(&_lcdDriver, &_encoderDriver);
-ConfigurationPage _configPage = ConfigurationPage(&_lcdDriver, &_encoderDriver);
+MainPage _mainPage = MainPage(&_lcdDriver, &_encoderDriver, &_tempSvc);
+ConfigurationPage _configPage = ConfigurationPage(&_lcdDriver, &_encoderDriver, &_tempSvc);
 
 /*
 	Associate the page with a static name and put this in a PageEntry.
@@ -35,7 +42,7 @@ void setup()
 {
 	Serial.begin(9600);
 	Serial.println("--START--");
-	pinMode(8, OUTPUT);
+	pinMode(PIN_BUZZER, OUTPUT);
 
 	// Initialize the LCD driver.
 	_lcdDriver.begin();
@@ -56,6 +63,11 @@ void setup()
 
 void loop() 
 {}
+
+void manageTemp()
+{
+	_tempSvc.ManageIron();
+}
 
 void EncoderChangeEvent()
 { 

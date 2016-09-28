@@ -75,6 +75,9 @@
     <ClInclude Include="EncoderDriver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TempControlService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainPage.cpp">
@@ -84,6 +87,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EncoderDriver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TempControlService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

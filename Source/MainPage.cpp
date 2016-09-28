@@ -126,14 +126,11 @@ void MainPage::Setup()
 {
 	LCD->fillScreen(TFT_BLACK);
 
-#ifdef TEST_MODE
-
 	// Show default profile values.
-	SelectedProfile = ProfileName::None;
-	ProfileTemp[0] = 100;
-	ProfileTemp[1] = 200;
-	ProfileTemp[2] = 300;
-#endif
+	SelectedProfile = ProfileName::NoProfile;
+	ProfileTemp[0] = PROFILE_A_TEMP;
+	ProfileTemp[1] = PROFILE_B_TEMP;
+	ProfileTemp[2] = PROFILE_C_TEMP;
 
 	// Display the initial presentation of the page without values.
 	PrepareHeader();
@@ -147,9 +144,6 @@ void MainPage::Setup()
 	UpdateProfileTemperature(ProfileName::ProfileA, ProfileTemp[0]);
 	UpdateProfileTemperature(ProfileName::ProfileB, ProfileTemp[1]);
 	UpdateProfileTemperature(ProfileName::ProfileC, ProfileTemp[2]);
-
-	// Get the initial values.
-	CurrentIronTemp = GetCurrentIronTemp();
 }
 
 /*
@@ -157,12 +151,32 @@ void MainPage::Setup()
 */
 PageName MainPage::Loop()
 {
-
-	// ManageLoadChange(); // Change the load so the current iron temp move to the target temperature.
-
 	while(true)
 	{
 		delay(100);
+
+		TempSvc->ManageIron();
+
+		int value = TempSvc->GetCurrentLoad();
+		if(_currentLoad!=value)
+		{ 
+			_currentLoad = value;
+			UpdateLoadLevelValue(value);
+		}
+
+		value = TempSvc->GetCurrentTemp();
+		if(_currentTemp!=value)
+		{
+			_currentTargetTemp = value;
+			UpdateCurrentTemp(value);
+		}
+
+		value = TempSvc->GetTargetTemp();
+		if(_currentTargetTemp!=value)
+		{
+			_currentTargetTemp = value;
+			UpdateTargetTemp(value);
+		}
 	}
 
 #ifdef TEST_MODE
@@ -337,7 +351,7 @@ void MainPage::UpdateLoadLevelValue(int load)
 	--
 	temp : The current iron temperature.
 */
-void MainPage::UpdateMainTemperature(int temp)
+void MainPage::UpdateCurrentTemp(int temp)
 {
 	// Draw the label.
 	LCD->setFreeFont(&NormalFont);
@@ -351,8 +365,8 @@ void MainPage::UpdateMainTemperature(int temp)
 
 	// Clear the old value and display the new one.
 	LCD->setFreeFont(&BigNumbersBold);
-	LCD->fillRect(0, 58, 264, 103, TFT_GREEN);
-	LCD->setTextColor(TFT_RED, TFT_GREEN);
+	LCD->fillRect(0, 58, 264, 103, TFT_BLACK);
+	LCD->setTextColor(TFT_WHITE, TFT_BLACK);
 	LCD->drawString(tempArray, 0, 66, 1);
 }
 
@@ -365,9 +379,9 @@ void MainPage::UpdateMainTemperature(int temp)
 */
 void MainPage::UpdateTargetTemp(int temp)
 { 
-	LCD->fillRect(268, 125, 122, 36, TFT_BLUE);
+	LCD->fillRect(268, 125, 122, 36, TFT_BLACK);
 	LCD->setFreeFont(&NormalNumbersBold);
-	LCD->setTextColor(TFT_RED);
+	LCD->setTextColor(TFT_WHITE);
 
 	String tempString = "0" + String(temp) + "0";
 	char tempArray[7];
@@ -376,54 +390,34 @@ void MainPage::UpdateTargetTemp(int temp)
 	LCD->drawString(tempArray, 268, 127, 1);
 }
 
-int MainPage::GetCurrentIronTemp()
-{
-	// Read the value of the iron temperature sensor input pin and do conversion to have a temperature in Celsius.
-
-	return 0;
-}
-
-void MainPage::SetcurrentIronLoad(int loadPercent)
-{
-	// Set the output voltage depending on the load.
-}
-
-void MainPage::ManageLoadChange()
-{
-	int newIronTemp = GetCurrentIronTemp();
-	int delta = newIronTemp-TargetIronTemp; // Negative indicate we should cool down.  If positive, we need to get hot.
-
-	int loadPercent = 0;
-
-	if(delta>0)
-	{
-		// Change the load depending on the difference between the current and target temp.  We use 10% per 5 degrees increment.
-		loadPercent = (delta/5)*10;
-	}
-	else if(delta!=0) // The current temperature is hotter than the target temperature.
-	{
-		// Cut the load.
-		loadPercent = 0;
-	}
-
-	// Keep the load between 0 and 100%.
-	if(loadPercent>100)
-	{
-		loadPercent = 100;
-	}
-
-	SetcurrentIronLoad(loadPercent);
-	UpdateLoadLevelValue(loadPercent/10);
-	UpdateMainTemperature(newIronTemp);
-}
-
 void MainPage::HandleEncoderChange()
 {
+	static unsigned long lastMillis = millis();
+	static byte count = 0;
+
 	int delta = Encoder->ReadDelta(false);
 
 	if(delta!=0)
 	{ 
-		CurrentIronTemp += delta;
-		UpdateMainTemperature(CurrentIronTemp);
+		// By default, the steps are 1 at each change.  If there is more than 5 changes in 100ms, we go to 10 steps per change.
+		int steps = 1;
+		unsigned long currentMillis = millis();
+		if((currentMillis-lastMillis)<100)
+		{
+			count++;
+			if(count>3)
+			{
+				steps = 20;
+			}
+		}
+		else
+		{
+			lastMillis = currentMillis;
+			count = 0;
+		}
+
+		int targetTemp = TempSvc->GetTargetTemp();
+		targetTemp += delta*steps;
+		TempSvc->SetTargetTemp(targetTemp);
 	}	
 }
